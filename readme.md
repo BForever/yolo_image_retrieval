@@ -6,6 +6,9 @@
 ### 参数
 - `--data`指定数据库图片文件夹/单个图片
 - `--det`指定yolo打印结果（与检索无关）
+- `--weights`指定yolov3.weights文件路径，yolov3的权重文件未包含在仓库中，可以使用`wget https://pjreddie.com/media/files/yolov3.weights`命令下载
+
+其他神经网络具体参数可以在`detect.py`中查看
 
 如果指定了文件夹，则会生成训练集信息文件，即`object_t_list.csv`和`train.npz`
 
