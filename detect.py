@@ -96,6 +96,7 @@ loaded_ims = [cv2.imread(x) for x in imlist]
 
 im_batches = list(map(prep_image, loaded_ims, [inp_dim for x in range(len(imlist))]))
 im_dim_list = [(x.shape[1], x.shape[0]) for x in loaded_ims]
+im_dim_list_origin = im_dim_list
 im_dim_list = torch.FloatTensor(im_dim_list).repeat(1,2)
 
 
@@ -197,8 +198,36 @@ def write(x, results):
     cv2.putText(img, label, (c1[0], c1[1] + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 1, [225,255,255], 1);
     return img
 
+block_num = model.save_features("train" if len(imlist) != 1 else "eval")
+print("block_num = {}".format(block_num))
+object_list = []
+def info(x):
+    batch_index = int(x[0])
+    c1 = tuple(x[1:3].int())
+    c2 = tuple(x[3:5].int())
+    center_x = (c1[0]+c2[0])/2
+    center_y = (c1[1] + c2[1]) / 2
+    index_x = int(center_x/(im_dim_list_origin[batch_index][0]/block_num))
+    index_y = int(center_y / (im_dim_list_origin[batch_index][1] / block_num))
+    # index_left_x = int(c1[0]/(im_dim_list_origin[batch_index][0]/block_num))
+    # index_left_y = int(c1[1] / (im_dim_list_origin[batch_index][1] / block_num))
+    # index_right_x = int(c2[0] / (im_dim_list_origin[batch_index][0] / block_num))
+    # index_right_y = int(c2[1] / (im_dim_list_origin[batch_index][1] / block_num))
+    cls = int(x[-1])
+    filename = imlist[batch_index]
+    label = "{0}".format(classes[cls])
+    object_list.append([batch_index,index_x,index_y,int(c1[0]),int(c1[1]),int(c2[0]),int(c2[1]),block_num,cls,label,filename,im_dim_list_origin[batch_index][0],im_dim_list_origin[batch_index][1]])
+    # print("batch: {} x: {}, y: {}, class: {}, label: {}, filename: {}".format(batch_index,index_x,index_y,cls,label,filename))
+
 
 list(map(lambda x: write(x, loaded_ims), output))
+# print(imlist)
+# print(im_dim_list_origin)
+list(map(lambda x: info(x), output))
+# print(object_list)
+
+data1 = pd.DataFrame(object_list) # header:原第一行的索引，index:原第一列的索引
+data1.to_csv('object_t_list.csv'if len(imlist) != 1 else "object_e_list.csv", header=True, index=False)
 
 det_names = pd.Series(imlist).apply(lambda x: "{}/det_{}".format(args.det,x.split("/")[-1]))
 
